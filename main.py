@@ -17,10 +17,14 @@ import aioconsole
 import PySimpleGUI as sg
 import sys
 
+# Clear on launch incase there was something there in their terminal from before
+os.system('cls' if os.name == 'nt' else 'clear')
+
+os.system('color')
 # SETTINGS
 checkProxies = False
 printWorkingProxies = False
-printWorkingTokens = False
+printWorkingTokens = True
 
 
 def isMain():
@@ -182,6 +186,38 @@ async def sendMessage(channelId, token, message):
                        channelId+"/messages", token, True, data)
 
 
+def addFriend(username, discriminator, token):
+    url = "https://discord.com/api/v8/users/@me/relationships"
+    data = {
+        "username": username,
+        "discriminator": discriminator
+    }
+    PostProxiedRequest(url, token, True, data)
+
+
+def setStatus(status, token):
+    data = {
+        "custom_status": status
+    }
+    PostProxiedRequest(
+        "https://discord.com/api/v8/users/@me/settings", token, True, data)
+
+
+def addWithAllTokens(name):
+    name = name.split("#")
+    i = 0
+    for i in range(0, len(tokens)):
+        addFriend(name[0], name[1], tokens[i])
+        i += 1
+
+
+def setStatusAllTokens(status):
+    i = 0
+    for i in range(0, len(tokens)):
+        setStatus(status, tokens[i])
+        i += 1
+
+
 def spamChannelWithAllTokens(channelId, Message):
     while True:
         i = 0
@@ -254,6 +290,10 @@ def DeleteProxiedRequest(url, discordSecurityToken, doParams=False, linkParams="
             return r.text
 
 
+def cls():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
 def reloadTokens():
     tokens = openFileLines("tokens.txt")
     workingTokens = []
@@ -292,15 +332,26 @@ def reloadProxies():
     cprint("Done.", "green")
 
 
+def restart():
+    cprint("Restarting...", "red")
+    time.sleep(1)
+    cls()
+    os.system('python main.py')
+
+
 def showHelp():
     cprint("-$ join [serverInviteCode] | Joins a server", "red")
     cprint(
         "-$ spam channel [channelId] [message] (ARGS POSSIBLE) | Spams a channel in a server with a message", "red")
     cprint(
         "-$ leave [serverId] | Leaves a specific server on all clients", "red")
+    cprint("-$ add [username] -- (Example: discord#0001) | Adds a discord user with all tokens (HIGH TOKEN BAN CHANCE)", "red")
+    cprint(
+        "-$ status [status] | Sets status of all clients (Unknown Token Ban Rate)", "red")
     cprint("-$ help | Shows commands", "red")
     cprint("-$ reloadtokens | reloads all tokens from file", "red")
     cprint("-$ reloadproxies | reloads all proxies from file", "red")
+    cprint("-$ restart | restarts program", "red")
 
 
 def start():
@@ -331,6 +382,27 @@ def start():
             reloadTokens()
         elif (includes(command, "reloadproxies")):
             reloadProxies()
+        elif (includes(command, "add")):
+            args = command.strip("add ")
+            cprint("Spam-Adding User: " + args, "blue")
+            pool = Pool(processes=1)
+            result = pool.apply_async(
+                addWithAllTokens, [args])
+            input(termcolor.colored("Press enter to stop", "red"))
+            pool.terminate()
+        elif (includes(command, "status")):
+            args = command.strip("status ")
+            cprint("Setting status: " + args, "blue")
+            pool = Pool(processes=1)
+            result = pool.apply_async(
+                setStatusAllTokens, [args])
+            input(termcolor.colored("Press enter to stop", "red"))
+            pool.terminate()
+        elif (includes(command, "restart")):
+            restart()
+            break
+        elif (includes(command, "clear")):
+            cls()
         else:
             cprint("Command did not work, type help to see commands.", "red")
 
