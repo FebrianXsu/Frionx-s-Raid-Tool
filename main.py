@@ -17,21 +17,23 @@ import aioconsole
 import PySimpleGUI as sg
 import sys
 
-# Clear on launch incase there was something there in their terminal from before
-os.system('cls' if os.name == 'nt' else 'clear')
-
-os.system('color')
-# SETTINGS
-checkProxies = False
-printWorkingProxies = False
-printWorkingTokens = True
-
 
 def isMain():
     if __name__ == "__main__":
         return True
     else:
         return False
+
+
+# Clear on launch incase there was something there in their terminal from before
+if isMain():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+os.system('color')
+# SETTINGS
+checkProxies = False
+printWorkingProxies = False
+printWorkingTokens = True
 
 
 def watermark(text):
