@@ -12,9 +12,6 @@ import multiprocessing as mp
 from multiprocessing import Pool
 import os
 import colorama
-import asyncio
-import aioconsole
-import PySimpleGUI as sg
 import sys
 
 
