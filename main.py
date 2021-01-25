@@ -28,8 +28,8 @@ if isMain():
 
 os.system('color')
 # SETTINGS
-checkProxies = False
-printWorkingProxies = False
+checkProxies = True
+printWorkingProxies = True
 printWorkingTokens = True
 
 
@@ -59,7 +59,7 @@ def is_bad_proxy(pip):
             opener.addheaders = [('User-agent', 'Mozilla/5.0')]
             urllib.request.install_opener(opener)
             # change the URL to test here
-            req = urllib.request.Request('http://www.example.com')
+            req = urllib.request.Request(proxysite)
             sock = urllib.request.urlopen(req)
         except urllib.error.HTTPError as e:
             return True
@@ -121,6 +121,7 @@ tokens = openFileLines("tokens.txt")
 workingTokens = []
 i = 0
 if isMain():
+    proxysite = input('What site would you like to check the proxies on (example=https://site.com) : ')
     cprint("Checking tokens...", "blue")
 for i in range(0, len(tokens)):
     proxy = getRandomProxy()
@@ -176,18 +177,13 @@ def leaveWithAllTokens(id):
         i += 1
 
 
-def sendMessage(channelId, token, message):
+async def sendMessage(channelId, token, message):
     data = {
         "content": message,
         "tts": "false"
     }
-    PostProxiedRequest("https://discord.com/api/v8/channels/" + channelId+"/messages", token, True, data)
-#async def sendMessage(channelId, token, message):
-#    data = {
-#        "content": message,
-#        "tts": "false"
-#    }
-#    PostProxiedRequest("https://discord.com/api/v8/channels/" + channelId+"/messages", token, True, data)
+    PostProxiedRequest("https://discord.com/api/v8/channels/" +
+                       channelId+"/messages", token, True, data)
 
 
 def addFriend(username, discriminator, token):
@@ -226,8 +222,7 @@ def spamChannelWithAllTokens(channelId, Message):
     while True:
         i = 0
         for i in range(0, len(tokens)):
-            #asyncio.run(sendMessage(channelId, tokens[i], Message))
-            sendMessage(channelId, tokens[i], Message)
+            asyncio.run(sendMessage(channelId, tokens[i], Message))
             i += 1
 
 
