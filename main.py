@@ -176,13 +176,18 @@ def leaveWithAllTokens(id):
         i += 1
 
 
-async def sendMessage(channelId, token, message):
+def sendMessage(channelId, token, message):
     data = {
         "content": message,
         "tts": "false"
     }
-    PostProxiedRequest("https://discord.com/api/v8/channels/" +
-                       channelId+"/messages", token, True, data)
+    PostProxiedRequest("https://discord.com/api/v8/channels/" + channelId+"/messages", token, True, data)
+#async def sendMessage(channelId, token, message):
+#    data = {
+#        "content": message,
+#        "tts": "false"
+#    }
+#    PostProxiedRequest("https://discord.com/api/v8/channels/" + channelId+"/messages", token, True, data)
 
 
 def addFriend(username, discriminator, token):
@@ -221,7 +226,8 @@ def spamChannelWithAllTokens(channelId, Message):
     while True:
         i = 0
         for i in range(0, len(tokens)):
-            asyncio.run(sendMessage(channelId, tokens[i], Message))
+            #asyncio.run(sendMessage(channelId, tokens[i], Message))
+            sendMessage(channelId, tokens[i], Message)
             i += 1
 
 
