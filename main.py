@@ -13,6 +13,7 @@ from multiprocessing import Pool
 import os
 import colorama
 import sys
+import asyncio
 
 
 def isMain():
@@ -28,7 +29,7 @@ if isMain():
 
 os.system('color')
 # SETTINGS
-checkProxies = True
+checkProxies = False
 printWorkingProxies = True
 printWorkingTokens = True
 
@@ -59,7 +60,7 @@ def is_bad_proxy(pip):
             opener.addheaders = [('User-agent', 'Mozilla/5.0')]
             urllib.request.install_opener(opener)
             # change the URL to test here
-            req = urllib.request.Request(proxysite)
+            req = urllib.request.Request('https://google.com')
             sock = urllib.request.urlopen(req)
         except urllib.error.HTTPError as e:
             return True
@@ -121,7 +122,6 @@ tokens = openFileLines("tokens.txt")
 workingTokens = []
 i = 0
 if isMain():
-    proxysite = input('What site would you like to check the proxies on (example=https://site.com) : ')
     cprint("Checking tokens...", "blue")
 for i in range(0, len(tokens)):
     proxy = getRandomProxy()
@@ -140,13 +140,13 @@ tokens = workingTokens
 i = 0
 
 
-def joinServer(token, invite):
+async def joinServer(token, invite):
     PostProxiedRequest(
         "https://discord.com/api/v8/invites/" + invite, token, False)
     cprint("Joined/Attempted to join with token: "+token, "blue")
 
 
-def leaveServer(token, serverId):
+async def leaveServer(token, serverId):
     DeleteProxiedRequest(
         "https://discordapp.com/api/v8/users/@me/guilds/" + serverId, token, False)
 
@@ -166,25 +166,22 @@ def includes(string, substring):
 def joinWithAllTokens(invite):
     i = 0
     for i in range(0, len(tokens)):
-        joinServer(tokens[i], invite)
+        asyncio.run(joinServer(tokens[i], invite))
         i += 1
 
 
 def leaveWithAllTokens(id):
     i = 0
     for i in range(0, len(tokens)):
-        leaveServer(tokens[i], id)
+        asyncio.run(leaveServer(tokens[i], id))
         i += 1
-
 
 async def sendMessage(channelId, token, message):
     data = {
         "content": message,
         "tts": "false"
     }
-    PostProxiedRequest("https://discord.com/api/v8/channels/" +
-                       channelId+"/messages", token, True, data)
-
+    PostProxiedRequest("https://discord.com/api/v8/channels/" + channelId+"/messages", token, True, data)
 
 def addFriend(username, discriminator, token):
     url = "https://discord.com/api/v8/users/@me/relationships"
@@ -222,6 +219,7 @@ def spamChannelWithAllTokens(channelId, Message):
     while True:
         i = 0
         for i in range(0, len(tokens)):
+            #asyncio.run(sendMessage(channelId, tokens[i], Message))
             asyncio.run(sendMessage(channelId, tokens[i], Message))
             i += 1
 
@@ -239,6 +237,31 @@ def getProxiedRequest(url, discordSecurityToken, doParams=False, linkParams=""):
 
 
 def PostProxiedRequest(url, discordSecurityToken, doParams=False, linkParams=""):
+    discordSecurityToken = discordSecurityToken.strip("\n")
+    cookie = {'authorization': discordSecurityToken}
+    proxy = getRandomProxy()
+    proxy = proxy.split(":")
+    proxy[1] = proxy[1].strip("\n")
+    if doParams:
+        r = requests.post(url, proxies=dict(
+            http='socks4://' + proxy[0] + ':' + proxy[1]), headers=cookie, json=linkParams)
+        if (r.status_code != 200):
+            cprint("ERROR while POSTING with TOKEN: " +
+                   discordSecurityToken+" STATUS CODE: "+str(r.status_code), "red")
+            return "404"
+        else:
+            return r.text
+    else:
+        r = requests.post(url, proxies=dict(
+            http='socks4://' + proxy[0] + ':' + proxy[1]), headers=cookie)
+        if (r.status_code != 200):
+            cprint("ERROR while POSTING with TOKEN: " +
+                   discordSecurityToken+" STATUS CODE: "+str(r.status_code), "red")
+            return "404"
+        else:
+            return r.text
+
+async def AsyncPostProxiedRequest(url, discordSecurityToken, doParams=False, linkParams=""):
     discordSecurityToken = discordSecurityToken.strip("\n")
     cookie = {'authorization': discordSecurityToken}
     proxy = getRandomProxy()
@@ -365,13 +388,15 @@ def start():
             args = command.strip("spam channel ")
             args = args.split(' ')
             channelId = args[0]
+            print(channelId)
             text = ' '.join(args[1:])
+            print(text)
             cprint("Spamming Channel: " + channelId, "blue")
-            pool = Pool(processes=1)
-            result = pool.apply_async(
-                spamChannelWithAllTokens, [channelId, text])
-            input(termcolor.colored("Press enter to stop", "red"))
-            pool.terminate()
+            #pool = Pool(processes=1)
+            #result = pool.apply_async(
+            spamChannelWithAllTokens(channelId, text)
+            #input(termcolor.colored("Press enter to stop", "red"))
+            #pool.terminate()
         elif (includes(command, "leave")):
             serverId = command.strip("leave ")
             cprint("LEAVING: " + serverId, "blue")
